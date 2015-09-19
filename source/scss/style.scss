@@ -1,0 +1,141 @@
+/* Variables
+-------------------------------------------------------------- */
+
+$size-sm:        90px;
+$size:           140px;
+$spacing:        5px;
+
+$player-1-icon:  "\f00d";
+$player-2-icon:  "\f10c";
+
+$player-1-color: #dc685a;
+$player-2-color: #ecaf4f;
+$hover-color:    #3d4250;
+
+/* Body and Notice styling
+-------------------------------------------------------------- */
+body {
+  color: #b6b5ca;
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  text-align: center;
+}
+
+h5 {
+  font-weight: 400;
+  padding: 0 20px;
+}
+
+/* Tic-tac-toe game
+-------------------------------------------------------------- */
+
+.tic-tac-toe {
+  font-family: 'Open Sans', sans-serif;
+  height: ($size-sm + $spacing*2)*3;
+  overflow: hidden;
+  margin: 50px auto 30px auto;
+  position: relative;
+  width: ($size-sm + $spacing*2)*3;
+
+  @media(min-width: 450px) {
+    height: ($size + $spacing*2)*3;
+    width: ($size + $spacing*2)*3;
+  }
+
+  td {
+    background-color: #78bec5;
+    border-radius: 14px;
+    cursor: pointer;
+    color: #fff;
+    display: block;
+    height: $size-sm;
+    margin: $spacing;
+    position: absolute;
+    width: $size-sm;
+
+    @media(min-width: 450px) {
+      height: $size;
+      width: $size;
+    }
+
+    // Label hover effect
+    &.unchecked:hover {
+      background-color: $hover-color;
+
+      &:after { opacity: .4; }
+    }
+
+    // Label positioning
+    &.left { left: 0; }
+    &.top { top: 0; }
+
+    &.middle { left: ($size-sm + $spacing*2); }
+    &.right { left: ($size-sm + $spacing*2)*2; }
+    &.center { top: ($size-sm + $spacing*2); }
+    &.bottom { top: ($size-sm + $spacing*2)*2; }
+
+    @media(min-width: 450px) {
+      &.middle { left: ($size + $spacing*2); }
+      &.right { left: ($size + $spacing*2)*2; }
+      &.center { top: ($size + $spacing*2); }
+      &.bottom { top: ($size + $spacing*2)*2; }
+    }
+
+    // Icon style
+    .fa {
+      left: 0;
+      font-family: "FontAwesome";
+      font-size: $size-sm*0.5;
+      margin-top: -($size-sm*0.5)/2;
+      position: absolute;
+      text-align: center;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, .2);
+      top: 50%;
+      width: 100%;
+
+      @media(min-width: 450px) {
+        font-size: $size*0.5;
+        margin-top: -($size*0.5)/2;
+      }
+    }
+  }
+
+  // End screen style
+  .end {
+    background: rgba(255, 255, 255, .8);
+    color: #3d4250;
+    display: none;
+    padding-top: 55px;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    text-align: center;
+    z-index: 10;
+
+    @media(min-width: 450px) {
+      padding-top: 110px;
+    }
+
+    h3 {
+      font-size: 30px;
+      font-weight: 300;
+
+      @media(min-width: 450px) { font-size: 40px; }
+    }
+
+    a {
+      background-color: #3d4250;
+      border-radius: 4px;
+      color: #fff;
+      padding: 14px 45px;
+      text-decoration: none;
+
+      &:hover {
+        background-color: #262934;
+        cursor: pointer;
+      }
+    }
+  }
+}

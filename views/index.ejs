@@ -2,10 +2,223 @@
 <html>
   <head>
     <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel='stylesheet' href='//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.1.0/css/font-awesome.min.css'>
+    <link rel='stylesheet' href='//fonts.googleapis.com/css?family=Open+Sans:400,300,700'>
+    <link rel='stylesheet' href='/assets/css/style.css'>
   </head>
   <body>
     <h1><%= title %></h1>
     <p>Welcome to <%= title %></p>
+    <% if (player_id != 1) { %>
+    <form id="registration">
+      <input type="submit" value="I'm in!">
+    </form>
+    <% } %>
+
+    <div class="tic-tac-toe" style="display:none">
+      <table width="300" height="300" class="grid">
+        <tr>
+            <td class="unchecked left top" data-id="1"></td>
+            <td class="unchecked middle top" data-id="2"></td>
+            <td class="unchecked right top" data-id="3"></td>
+        </tr>
+        <tr>
+            <td class="unchecked left center" data-id="4"></td>
+            <td class="unchecked middle center" data-id="5"></td>
+            <td class="unchecked right center" data-id="6"></td>
+        </tr>
+        <tr>
+            <td class="unchecked left bottom" data-id="7"></td>
+            <td class="unchecked middle bottom" data-id="8"></td>
+            <td class="unchecked right bottom" data-id="9"></td>
+        </tr>
+      </table>
+      <div class="end">
+        <h3></h3><a id="restart_game" href="#">Restart</a>
+      </div>
+    </div>
+    <div id="message"></div>
+    <h5>Note: use the Full Page view for the best experience.</h5>
+    <script src="//code.jquery.com/jquery-2.1.4.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      $(document).ready(function () {
+        var socket = io.connect();
+        var lock = true;
+        var player_id = <%= player_id == 1 ? 1 : -1 %>;
+        <% if (player_id == 1) { %>
+        socket.emit('join', '<%= room_id %>');
+        $('.tic-tac-toe').show();
+        <% } %>
+        var players = [
+          {
+            color: '#ecaf4f', // player 1
+            symbol: 'fa-times'
+          },
+          {
+            color: '#dc685a', // player 2
+            symbol: 'fa-circle-o'
+          }
+        ];
+        resetGame();
+
+        function resetGame() {
+          // remove all unchecked
+          for (var i = 1; i <= 9; i++) {
+            var box = $('.tic-tac-toe td[data-id=' + i + ']');
+            box.removeClass('unchecked');
+            box.css({'cursor': 'default', 'background-color': ''});
+            box.html('');
+          }
+        }
+
+        $('#registration').submit(function(e) {
+          e.preventDefault();
+          socket.emit('create');
+          $(this).remove();
+        });
+
+        $('.tic-tac-toe td').click(function() {
+          if (!$(this).hasClass('unchecked') || player_id < 0 || lock) {
+            return; // already checked
+          }
+          console.log($(this).data('id'));
+
+          socket.emit('change_state', $(this).data('id'));
+        });
+
+        $('#restart_game').click(function(e) {
+          if (player_id < 0) {
+            return; // invalid
+          }
+          e.preventDefault();
+          socket.emit('restart_game');
+        });
+
+        // socket handlers
+        socket.on('start_room', function(data) {
+          $('.tic-tac-toe').show();
+          console.log('Room started!');
+          var title = 'Tic Tac Toe';
+
+          $('title').text(title);
+          window.history.replaceState(null, title, '/' + data.room_id);
+          player_id = data.player_id;
+
+          console.log(data);
+          if (data.game == undefined) {
+            $("#message").html("Waiting for next player...");
+          } else {
+            beginGame(data.game.current_player, data.game.board, data.game.game_over);
+          }
+        });
+
+        socket.on('start_game', function(data) {
+          $("#message").html("Player 2 has joined...");
+
+          beginGame(data.game.current_player, data.game.board, data.game.game_over);
+        });
+
+        function repopulateBoard(current, board, game_over) {
+          console.log(board);
+          // repopulate board
+          for (var i = 1; i <= 9; i++) {
+            var box = $('.tic-tac-toe td[data-id=' + i + ']');
+            var cell = board[i - 1];
+
+            if (cell == 'X') {
+              box.removeClass('unchecked');
+              box.css({'cursor': 'default', 'background-color': players[0].color});
+              box.html('<i class="fa ' + players[0].symbol + '"></i>');
+            } else if (cell == 'O') {
+              box.removeClass('unchecked');
+              box.css({'cursor': 'default', 'background-color': players[1].color});
+              box.html('<i class="fa ' + players[1].symbol + '"></i>');
+            } else if (current == player_id && !game_over) {
+              box.addClass('unchecked');
+              box.css({'cursor': 'pointer'});
+            } else {
+              box.removeClass('unchecked');
+              box.css({'cursor': 'default'});
+            }
+          }
+        }
+
+        function beginGame(current, board, game_over) {
+          repopulateBoard(current, board, game_over);
+          console.log(player_id);
+          if (game_over) {
+            $('.end h3').html('The game has ended.');
+            $("#message").html('The game has ended.');
+            $('.end').show();
+            lock = true;
+          } else if (current == player_id) {
+            $("#message").html('It\'s your turn!');
+            lock = false;
+          } else {
+            $("#message").html('It\'s your opponent\'s turn!');
+            lock = true;
+          }
+        }
+
+        socket.on('change_state', function(data) {
+          if (data.err) {
+            console.log(data.err);
+          } else {
+            beginGame(data.game.current_player, data.game.board, data.game.game_over);
+          }
+        });
+
+        socket.on('win_game', function(data) {
+          if (data.err) {
+            console.log(data.err);
+          } else {
+            repopulateBoard(data.game.current_player, data.game.board, data.game.game_over);
+            if (data.player_win == 2) {
+              $('.end h3').html('It\'s a tie!');
+              $("#message").html('It\'s a tie!');
+            } else if (data.player_win == player_id) {
+              $('.end h3').html('You won the game!');
+              $("#message").html('You won the game!');
+            } else {
+              $('.end h3').html('You lost the game!');
+              $("#message").html('You lost the game!');
+            }
+            lock = true;
+            $('.end').show();
+          }
+        });
+
+        socket.on('left_room', function() {
+          $('.end h3').html('Your opponent left!');
+          $("#message").html('Your opponent left!');
+          $('.end').show();
+          lock = true;
+        });
+
+        socket.on('restart_game', function(data) {
+          console.log('Game restarted!');
+          resetGame();
+          $('.end').hide();
+          $('.end h3').html('');
+          console.log(data.wait);
+          if (data.wait) {
+            repopulateBoard(data.game.current_player, data.game.board, data.game.game_over);
+            $("#message").html("Waiting for next player...");
+          } else {
+            beginGame(data.game.current_player, data.game.board, data.game.game_over);
+          }
+        });
+
+        socket.on('close_room', function(message) {
+          $('.end h3').html(message == undefined ? 'The room is closed.' : message);
+          $("#message").html(message == undefined ? 'The room is closed.' : message);
+          $('.end').show();
+          window.setTimeout( function(){
+            window.location = '/';
+          }, 5000);
+        });
+      });
+    </script>
   </body>
 </html>
