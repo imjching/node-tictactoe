@@ -74,7 +74,8 @@ io.sockets.on('connection', function(socket) {
       return;
     }
     var players_count = io.sockets.adapter.rooms[room_id];
-    if (Object.keys(players_count).length >= 2) {
+    console.log(players_count.length);
+    if (players_count.length >= 2) {
       socket.emit('close_room', 'This room is full.');
       return;
     }
